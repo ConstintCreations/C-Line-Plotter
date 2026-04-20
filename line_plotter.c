@@ -71,21 +71,77 @@ double ask_for_data(char *question) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argv[1] && argv[2]) {
-        double slope = strtod(argv[1], &stopstring);
-        double y_intercept = strtod(argv[2], &stopstring);
+int *calc_y_bounds(double slope, double y_intercept) {
+    int *arr = malloc(2 * sizeof(int));
+
+    arr[0] = INT_MAX;
+    arr[1] = INT_MIN;
+
+    for (int i = 0; i < WIDTH; i++) {
+        int y = (int)(slope * i + y_intercept);
+        if (y > arr[1]) arr[1] = y;
+        if (y < arr[0]) arr[0] = y;
+    }
+
+    return arr;
+}
+
+int draw_graph(double slope, double y_intercept) {
+    char *screen_buffer = malloc((WIDTH + 1) * HEIGHT + 1);
+
+    make_screen_array(screen_buffer);
+    int *bounds = calc_y_bounds(slope, y_intercept);
+
+    int x_axis_location;
+    if (bounds[0] == bounds[1]) {
+        x_axis_location = (HEIGHT / 2) - y_intercept;
     } else {
-        double slope = ask_for_data("slope");
-        double y_intercept = ask_for_data("y-intercept");   
+        double x_axis_ratio = (0.0 - bounds[0]) / (bounds[1] - bounds[0]);
+        x_axis_location = (int)((HEIGHT - 1) * x_axis_ratio);
+    }
+
+    if (x_axis_location < 0) x_axis_location = 0;
+    if (x_axis_location > HEIGHT - 1) x_axis_location = HEIGHT - 1;
+
+    for (int i = 0; i < WIDTH; i++) {
+        draw_symbol(i, (HEIGHT-1) - x_axis_location, screen_buffer, '-');
+    }
+
+    for (int i = 0; i < WIDTH; i++) {
+        double y = slope * i + y_intercept;
+        int normal_y;
+        if (bounds[0] == bounds[1]) {
+            normal_y = HEIGHT / 2;
+        } else {
+            normal_y = (int)((HEIGHT - 1) * ((y - bounds[0]) / (bounds[1] - bounds[0])));
+        }
+        if (normal_y < 0) normal_y = 0;
+        if (normal_y > HEIGHT - 1) normal_y = HEIGHT - 1;
+
+        draw_symbol(i, (HEIGHT-1) - normal_y, screen_buffer, 'x');
+    }
+
+    free(screen_buffer);
+    free(bounds);
+    
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    double slope, y_intercept;
+    if (argv[1] && argv[2]) {
+        slope = strtod(argv[1], &stopstring);
+        y_intercept = strtod(argv[2], &stopstring);
+    } else {
+        slope = ask_for_data("slope");
+        y_intercept = ask_for_data("y-intercept");   
     }
 
     printf("\x1b[8;%d;%dt", HEIGHT + 1, WIDTH + 2);
     printf("\x1b[?25l");
     CLEAR_SCREEN();
 
-    char *screen_buffer = malloc((WIDTH + 1) * HEIGHT + 1);
-    make_screen_array(screen_buffer);
+    draw_graph(slope, y_intercept);
 
     SLEEP(5);
     CLEAR_SCREEN();
