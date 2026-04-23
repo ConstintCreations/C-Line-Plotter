@@ -125,10 +125,6 @@ int draw_max_min_scale(int *bounds, char *screen_buffer) {
 
     memcpy(&screen_buffer[location], min_string, min_len);
 
-    printf("\x1b[H");
-    printf("%s", screen_buffer);
-    fflush(stdout);
-
     return 0;
 }
 
@@ -165,9 +161,20 @@ int draw_graph(double slope, double y_intercept) {
         if (normal_y > HEIGHT - 1) normal_y = HEIGHT - 1;
 
         draw_symbol(i, (HEIGHT-1) - normal_y, screen_buffer, 'x');
+        
     }
 
     draw_max_min_scale(bounds, screen_buffer);
+
+    printf("\x1b[H");
+    for (int i = 0; i < strlen(screen_buffer); i++) {
+        if (screen_buffer[i] == 'x') {
+            printf("\x1b[38;5;4mx\x1b[39m");
+        } else {
+            putchar(screen_buffer[i]);
+        }
+    }
+    fflush(stdout);
 
     free(screen_buffer);
     free(bounds);
